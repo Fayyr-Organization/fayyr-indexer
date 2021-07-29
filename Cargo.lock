@@ -1880,6 +1880,7 @@ name = "indexer-example"
 version = "0.1.0"
 dependencies = [
  "actix",
+ "base64 0.11.0",
  "clap 3.0.0-beta.2",
  "near-indexer",
  "openssl-probe",

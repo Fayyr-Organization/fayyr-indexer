@@ -3,12 +3,21 @@ use std::collections::{HashMap, HashSet};
 
 use clap::Clap;
 use tokio::sync::mpsc;
-use tracing::info;
+//use tracing::info;
 
 use configs::{init_logging, Opts, SubCommand};
 use near_indexer;
 
 mod configs;
+
+#[derive(Debug)]
+struct TransactionDetails {
+    method_name: String,
+    args: serde_json::Value,
+    signer_id: String,
+    deposit: String,
+    success_value: bool,
+}
 
 // Assuming fayyr contract deployed to account id fayyr_market_contract_5.testnet
 // We want to catch all *successfull* transactions sent to this contract
@@ -55,13 +64,65 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                 if let Some(receipt_id) =
                     wanted_receipt_ids.take(&execution_outcome.receipt.receipt_id.to_string())
                 {
+                    let mut execution_details = TransactionDetails {
+                        method_name: "".to_string(),
+                        args: serde_json::Value::String("".to_string()),
+                        signer_id: "".to_string(),
+                        deposit: "".to_string(),
+                        success_value: true    //execution_outcome.execution_outcome.outcome.status, == SuccessValue(``),
+                    };
+
+                    let signer_id = if let near_indexer::near_primitives::views::ReceiptEnumView::Action { ref signer_id, .. } = execution_outcome.receipt.receipt {
+                        Some(signer_id)
+                    } else {
+                        None
+                    };
+
+                    match signer_id {
+                        Some(signer_id) => {
+                            execution_details.signer_id = signer_id.to_string();
+                        },
+                        _ => {},
+                    };
+
+                    eprintln!("Entire Execution Outcome ---> {:#?}", execution_outcome);   
+
+                    if let near_indexer::near_primitives::views::ReceiptEnumView::Action {
+                        actions,
+                        ..
+                    } = execution_outcome.receipt.receipt
+                    {
+                        for action in actions.iter() {
+                            if let near_indexer::near_primitives::views::ActionView::FunctionCall {
+                                args,
+                                ..
+                            } = action
+                            {
+                                if let Ok(decoded_args) = base64::decode(args) {
+                                    if let Ok(args_json) = serde_json::from_slice::<serde_json::Value>(&decoded_args) {
+                                        execution_details.args = args_json;
+                                    }
+                                }
+                            }
+                            if let near_indexer::near_primitives::views::ActionView::FunctionCall {
+                                method_name,
+                                ..
+                            } = action
+                            {
+                                execution_details.method_name = method_name.to_string();
+                            }
+                            if let near_indexer::near_primitives::views::ActionView::FunctionCall {
+                                deposit,
+                                ..
+                            } = action
+                            {
+                                execution_details.deposit = deposit.to_string();
+                            }
+                        }
+                    }
                     // log the tx because we've found it
-                    info!(
-                        target: "indexer_example",
-                        "Transaction hash {:?} related to Fayyr executed with status {:?}",
-                        tx_receipt_ids.get(receipt_id.as_str()),
-                        execution_outcome.execution_outcome.outcome.status
-                    );
+                    eprintln!("Execution Details {:?} related to Fayyr", execution_details);
+
                     // remove tx from hashmap
                     tx_receipt_ids.remove(receipt_id.as_str());
                 }
@@ -71,7 +132,7 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
 }
 
 fn is_fayyr_tx(tx: &near_indexer::IndexerTransactionWithOutcome) -> bool {
-    tx.transaction.receiver_id.as_str() == "fayyr_market_contract_5.testnet"
+    tx.transaction.receiver_id.as_str() == "market.test.near" //|| tx.transaction.receiver_id.as_str() == "test.near"
 }
 
 fn main() {

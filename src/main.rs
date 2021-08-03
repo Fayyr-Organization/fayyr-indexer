@@ -8,16 +8,19 @@ use tokio::sync::mpsc;
 use configs::{init_logging, Opts, SubCommand};
 use near_indexer;
 
+//use postgres::{Client, NoTls};
+
 mod configs;
 
 #[derive(Debug)]
-struct TransactionDetails {
+struct ExecutionDetails {
     method_name: String,
     args: serde_json::Value,
     signer_id: String,
     deposit: String,
     success_value: bool,
 }
+
 
 // Assuming fayyr contract deployed to account id fayyr_market_contract_5.testnet
 // We want to catch all *successfull* transactions sent to this contract
@@ -64,7 +67,7 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                 if let Some(receipt_id) =
                     wanted_receipt_ids.take(&execution_outcome.receipt.receipt_id.to_string())
                 {
-                    let mut execution_details = TransactionDetails {
+                    let mut execution_details = ExecutionDetails {
                         method_name: "".to_string(),
                         args: serde_json::Value::String("".to_string()),
                         signer_id: "".to_string(),
@@ -120,6 +123,20 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                             }
                         }
                     }
+                    match execution_details.method_name.as_str() {
+                        "remove_sale" => {
+                            eprintln!("Remove Sale Has Been Called")
+                        },
+                        "update_price" => {
+                            eprintln!("Update Price Has Been Called")
+                        },
+                        "offer" => {
+                            eprintln!("Offer Has Been Called")
+                        },
+                        _ => {
+                            eprintln!("Other Transaction Called...")
+                        }
+                    }
                     // log the tx because we've found it
                     eprintln!("Execution Details {:?} related to Fayyr", execution_details);
 
@@ -150,6 +167,18 @@ fn main() {
     match opts.subcmd {
         SubCommand::Run => {
             eprintln!("Starting...");
+
+            // eprintln!("Connecting to Database...");
+            // let mut connecting = Client::connect("host=fayyr-indexer-testing.postgres.database.azure.com 
+            // port=5432 dbname=testingDB1 user=IndexerAdmin password=8724fa993oooooo?@ sslmode=require", NoTls);
+            // match connecting {
+            //     Ok(cli) => {
+            //         println!("Database connected.");
+            //         //db_client = Some(cli);
+            //     }
+            //     Err(error) => panic!("Database ERROR while connecting: {:?}",error),
+            // }
+
             let indexer_config = near_indexer::IndexerConfig {
                 home_dir,
                 sync_mode: near_indexer::SyncModeEnum::FromInterruption,

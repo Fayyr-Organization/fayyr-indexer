@@ -2,7 +2,11 @@
 
 ## 🚨🚨🚨 WORK IN PROGRESS 🚨🚨🚨
 
-An indexer that catches specific method calls for specific contracts and relays information to a PostgreSQL database. 
+An indexer that catches specific method calls for specific contracts and relays information to a PostgreSQL database. Created by: 
+- @BenKurrek - https://github.com/BenKurrek
+- @mariavmihu - https://github.com/mariavmihu
+- @frol - https://github.com/frol
+- @khorolets - https://github.com/khorolets
 
 ## TODO / DONE:
 - [x] basic indexer working

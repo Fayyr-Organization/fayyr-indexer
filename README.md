@@ -10,6 +10,7 @@ An indexer that catches specific method calls for specific contracts and relays 
 - [x] struct for passing information to database
 - [ ] connect to database to do posts
 - [ ] cross-contract calls
+- [ ] do we want to keep track of unsuccessful transactions in a DB? 
 
 ## Running Indexer:
 - install dependencies and compile code using `cargo check`
@@ -24,3 +25,6 @@ Update Price (make sure the token exists)
 
 Remove Sale (make sure the token exists)
 - `near call --accountId ben.test.near market.test.near remove_sale '{"nft_contract_id": "test.near", "token_id": "3"}' --amount 0.000000000000000000000001`
+
+Place Item For Sale
+- `near call --accountId ben.test.near test.near nft_approve '{"token_id": "3", "account_id": "market.test.near", "msg": "{\"sale_conditions\":[{\"ft_token_id\":\"near\",\"price\":\"5000000000000000000000000\"}]}"}' --amount 0.000000000000000000000001`

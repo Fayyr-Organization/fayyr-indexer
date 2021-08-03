@@ -1,12 +1,22 @@
 use actix;
-use std::collections::{HashMap, HashSet};
+
+use near_indexer::near_primitives::views::ExecutionStatusView;
+use near_indexer::near_primitives::types::BlockReference;
+use near_indexer::near_primitives::types::FunctionArgs;
+use near_indexer::near_primitives::views::QueryRequest;
+use near_client::Query;
+use near_client::ViewClientActor;
 
 use clap::Clap;
 use tokio::sync::mpsc;
+
+use actix::Addr;
 //use tracing::info;
 
 use configs::{init_logging, Opts, SubCommand};
 use near_indexer;
+
+use serde::{Serialize, Deserialize};
 
 //use postgres::{Client, NoTls};
 
@@ -21,61 +31,34 @@ struct ExecutionDetails {
     success_value: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct JsonToken {
+    pub owner_id: String,
+}
 
 // Assuming fayyr contract deployed to account id fayyr_market_contract_5.testnet
 // We want to catch all *successfull* transactions sent to this contract
 // In the demo we'll just look for them and log them
 // For real world application we need some real handlers
 
-async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>) {
+async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>, view_client: Addr<ViewClientActor>) {
     eprintln!("listen_blocks");
-    // map of correspondence between txs and receipts
-    let mut tx_receipt_ids = HashMap::<String, String>::new();
-    // list of receipt ids we're following
-    let mut wanted_receipt_ids = HashSet::<String>::new();
     while let Some(streamer_message) = stream.recv().await {
         for shard in streamer_message.shards {
-            let chunk = if let Some(chunk) = shard.chunk {
-                chunk
-            } else {
-                continue;
-            };
-
-            for transaction in chunk.transactions {
+            for receipt_and_execution_outcome in shard.receipt_execution_outcomes {
                 // Check if transaction is fayyr related
-                if is_fayyr_tx(&transaction) {
-                    // extract receipt_id transaction was converted into
-                    let converted_into_receipt_id = transaction
-                        .outcome
-                        .execution_outcome
-                        .outcome
-                        .receipt_ids
-                        .first()
-                        .expect("`receipt_ids` must contain one Receipt Id")
-                        .to_string();
-                    // add `converted_into_receipt_id` to the list of receipt ids we are interested in
-                    wanted_receipt_ids.insert(converted_into_receipt_id.clone());
-                    // add key value pair of transaction hash and in which receipt id it was converted for further lookup
-                    tx_receipt_ids.insert(
-                        converted_into_receipt_id,
-                        transaction.transaction.hash.to_string(),
-                    );
-                }
-            }
+                if is_fayyr_receipt(&receipt_and_execution_outcome.receipt) {
+                    let execution_outcome = receipt_and_execution_outcome.execution_outcome;
 
-            for execution_outcome in shard.receipt_execution_outcomes {
-                if let Some(receipt_id) =
-                    wanted_receipt_ids.take(&execution_outcome.receipt.receipt_id.to_string())
-                {
                     let mut execution_details = ExecutionDetails {
                         method_name: "".to_string(),
                         args: serde_json::Value::String("".to_string()),
                         signer_id: "".to_string(),
                         deposit: "".to_string(),
-                        success_value: true    //execution_outcome.execution_outcome.outcome.status, == SuccessValue(``),
+                        success_value: matches!(execution_outcome.outcome.status, ExecutionStatusView::SuccessValue(_) | ExecutionStatusView::SuccessReceiptId(_)),
                     };
 
-                    let signer_id = if let near_indexer::near_primitives::views::ReceiptEnumView::Action { ref signer_id, .. } = execution_outcome.receipt.receipt {
+                    let signer_id = if let near_indexer::near_primitives::views::ReceiptEnumView::Action { ref signer_id, .. } = receipt_and_execution_outcome.receipt.receipt {
                         Some(signer_id)
                     } else {
                         None
@@ -93,7 +76,7 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                     if let near_indexer::near_primitives::views::ReceiptEnumView::Action {
                         actions,
                         ..
-                    } = execution_outcome.receipt.receipt
+                    } = receipt_and_execution_outcome.receipt.receipt
                     {
                         for action in actions.iter() {
                             if let near_indexer::near_primitives::views::ActionView::FunctionCall {
@@ -123,6 +106,8 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                             }
                         }
                     }
+
+                    //eprintln!("Current Token Owner {:?}", current_token_owner);
                     match execution_details.method_name.as_str() {
                         "remove_sale" => {
                             eprintln!("Remove Sale Has Been Called")
@@ -131,6 +116,29 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                             eprintln!("Update Price Has Been Called")
                         },
                         "offer" => {
+                            eprintln!("Offer Has Been Called");
+                            let block_reference = BlockReference::latest();
+                            let request = QueryRequest::CallFunction {
+                                account_id: "test.near".parse().unwrap(),
+                                method_name: "nft_tokens_batch".to_string(),
+                                args: FunctionArgs::from(r#"{"token_ids": ["3"]}"#.as_bytes().to_owned()),
+                            };
+                            let query = Query::new(block_reference, request);
+                            let response = view_client.send(query).await.unwrap().unwrap();
+
+                            if let near_indexer::near_primitives::views::QueryResponseKind::CallResult(call_result) = response.kind {
+                                let result = call_result.result;
+    
+                            let output: Vec<JsonToken> = serde_json::from_slice(&result).unwrap();
+                            eprintln!("Current Token Owner {:?}", output);
+                            if output[0].owner_id == execution_details.signer_id {
+                                eprintln!("Signer Is Owner! Transaction Successful!");
+                            } else {
+                                eprintln!("Signer Is Not Owner... Transaction Failed.");
+                            }
+                    }
+                        },
+                        "nft_on_approve" => {
                             eprintln!("Offer Has Been Called")
                         },
                         _ => {
@@ -139,17 +147,14 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                     }
                     // log the tx because we've found it
                     eprintln!("Execution Details {:?} related to Fayyr", execution_details);
-
-                    // remove tx from hashmap
-                    tx_receipt_ids.remove(receipt_id.as_str());
                 }
             }
         }
     }
 }
 
-fn is_fayyr_tx(tx: &near_indexer::IndexerTransactionWithOutcome) -> bool {
-    tx.transaction.receiver_id.as_str() == "market.test.near" //|| tx.transaction.receiver_id.as_str() == "test.near"
+fn is_fayyr_receipt(receipt: &near_indexer::near_primitives::views::ReceiptView) -> bool {
+    receipt.receiver_id.as_str() == "market.test.near"
 }
 
 fn main() {
@@ -182,15 +187,16 @@ fn main() {
             let indexer_config = near_indexer::IndexerConfig {
                 home_dir,
                 sync_mode: near_indexer::SyncModeEnum::FromInterruption,
-                await_for_node_synced: near_indexer::AwaitForNodeSyncedEnum::WaitForFullSync,
+                await_for_node_synced: near_indexer::AwaitForNodeSyncedEnum::WaitForFullSync, //streamwhilesyncing
             };
 
             let sys = actix::System::new();
             sys.block_on(async move {
                 eprintln!("Actix");
                 let indexer = near_indexer::Indexer::new(indexer_config);
+                let view_client = indexer.client_actors().0; //returns tuple, second is another client actor - we only care about first value
                 let stream = indexer.streamer();
-                actix::spawn(listen_blocks(stream));
+                actix::spawn(listen_blocks(stream, view_client));
             });
             sys.run().unwrap();
         }

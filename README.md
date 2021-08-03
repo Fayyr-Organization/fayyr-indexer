@@ -8,8 +8,8 @@ An indexer that catches specific method calls for specific contracts and relays 
 - [x] basic indexer working
 - [x] match statements to determine which method has been called
 - [x] struct for passing information to database
+- [x] cross-contract calls
 - [ ] connect to database to do posts
-- [ ] cross-contract calls
 - [ ] do we want to keep track of unsuccessful transactions in a DB? 
 
 ## Running Indexer:

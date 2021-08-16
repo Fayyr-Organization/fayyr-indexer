@@ -2,7 +2,8 @@
 
 ## 🚨🚨🚨 WORK IN PROGRESS 🚨🚨🚨
 
-An indexer that catches specific method calls for specific contracts and relays information to a CRUD web API. Created by: 
+An indexer that catches specific method calls for specific contracts and relays information to a CRUD web API. 
+Created by: 
 - @BenKurrek - https://github.com/BenKurrek
 - @mariavmihu - https://github.com/mariavmihu
 - @frol - https://github.com/frol

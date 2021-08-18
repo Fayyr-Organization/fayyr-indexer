@@ -358,7 +358,7 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
 // Assuming contract deployed to account id market.test.near
 // Checks if receipt receiver is equal to the account id we care about
 fn is_fayyr_receipt(receipt: &near_indexer::near_primitives::views::ReceiptView) -> bool {
-    receipt.receiver_id.as_str() == "market2.test.near"
+    receipt.receiver_id.as_str() == "market.test.near"
 }
 
 fn main() {

@@ -2,7 +2,7 @@
 
 ## 🚨🚨🚨 WORK IN PROGRESS 🚨🚨🚨
 
-An indexer that catches specific method calls for specific contracts and relays information to a CRUD web API. 
+An indexer that catches specific methods for any desired deployed contracts and relays information to a CRUD web API. 
 Created by: 
 - @BenKurrek - https://github.com/BenKurrek
 - @mariavmihu - https://github.com/mariavmihu
@@ -13,18 +13,33 @@ Created by:
 - [x] basic indexer working
 - [x] match statements to determine which method has been called
 - [x] struct for passing information to database
-- [x] cross-contract calls
+- [x] picking up cross-contract calls
 - [x] connect to CRUD Web API to do posts
-- [ ] do we want to keep track of unsuccessful transactions in a DB? 
+- [x] finish writing up documentation fo rhow to use
+
+## Background Information:
+- this indexer currently catches specific methods on a modified version of Matt Lockyer's NFT Marketplace contract which can be found here: https://github.com/BenKurrek/nft-market
+- To change the desired contract that the indexer will look for, simply go to the function `is_fayyr_receipt` and change the accountId accordingly. 
 
 ## Running Indexer:
 - install dependencies and compile code using `cargo check`
 - initialize config using `cargo run -- init`
-- run indexer using `cargo run -- run`
+- run indexer using `cargo run -- run` if this fails, navigate to your `./near` directory (which is usually in your home directory) and open the `config.json` file. 
+- Scroll to the bottom of the file and replace `"tracked_shards": [],` with `"tracked_shards": [0],`
 
-## Commands For Local Testing:
-MAKE SURE TO DO THIS FIRST: set NEAR_ENV variable locally using: `export NEAR_ENV=localnet`
+## Complete Guide To Local Testing
+- Make sure the indexer is running by calling `cargo run -- run` as mentioned above. 
+- In a new terminal, navigate to the nft-market directory
+- The first thing you want to do is to set the NEAR_ENV variable by calling: `export NEAR_ENV=localnet`
+- Build all the NFT and Market contracts using the following command: `cd contracts/nft-simple && ./build.sh && cd ../.. && cd contracts/market-simple && ./build.sh && cd ../..` This will create the wasm files that will be deployed to the local network. 
+- deploy the nft contract using `near deploy --wasmFile out/main.wasm --accountId test.near`
+- instantiate a new instance of the nft contract using: `near call --accountId test.near test.near new '{"owner_id": "test.near", "metadata": {"spec": "1.0.0", "name": "TESTING CONTRACT", "symbol": "N/A"}}'`
+- create a subaccount that can be used to deploy the market contract using: `near create-account market.test.near --masterAccount test.near --initialBalance=40 --keyPath ~/.near/validator_key.json`
+- deploy the market contract using `near deploy --wasmFile out/market.wasm --accountId market.test.near`
+- instantiate a new instance of the market contract: `near call --accountId market.test.near market.test.near new '{"owner_id": "market.test.near"}'` The indexer should pickup this transaction and print the execution outcome and display that a transaction was called. 
+- You now have a market contract and nft contract deployed on your local network which you can play around with and see if the indexer picks up methods called on the market contract.
 
+## Useful Contract calls For Testing
 View For Sale Listings
 - `near view market.test.near get_sales_by_nft_contract_id '{"nft_contract_id": "test.near", "from_index": "0", "limit": 50}'`
 

@@ -69,18 +69,19 @@ async fn remove_token_forsale_database(tok_id: String, contr_id: String) -> Resu
    
     // make POST request
     let client = reqwest::Client::new();
-    let url = //YOUR API'S URL HERE !!!
-    let res = client.post(url.to_string())
-        .json(&map)
-        .send()
-        .await?;
+    eprintln!("Please Add a Valid URL and uncomment lines 72-84")
+    // let url = //YOUR API'S URL HERE !!!
+    // let res = client.post(url.to_string())
+    //     .json(&map)
+    //     .send()
+    //     .await?;
                                     
-        match res.status() {
-            StatusCode::OK => println!("Received status of success from response!"),
+    //     match res.status() {
+    //         StatusCode::OK => println!("Received status of success from response!"),
                                   
-            s => println!("Received response status: {:?}", s),
-        };
-        Ok(())
+    //         s => println!("Received response status: {:?}", s),
+    //     };
+    //     Ok(())
 }
 
 async fn insert_token_forsale_database(tok_id: String, contr_id: String, price: String) -> Result<(), Error> { 
@@ -98,18 +99,19 @@ async fn insert_token_forsale_database(tok_id: String, contr_id: String, price: 
 
     //make POST request
     let client = reqwest::Client::new();
-    let url = //YOUR API'S URL HERE !!!
-    let res = client.post(url.to_string())
-        .json(&map)
-        .send()
-        .await?;
+    eprintln!("Please Add a Valid URL and uncomment lines 103-114")
+    // let url = //YOUR API'S URL HERE !!!
+    // let res = client.post(url.to_string())
+    //     .json(&map)
+    //     .send()
+    //     .await?;
                                                                         
-        match res.status() {
-            StatusCode::OK => println!("Received status of success from response!"),
+    //     match res.status() {
+    //         StatusCode::OK => println!("Received status of success from response!"),
                                   
-            s => println!("Received response status: {:?}", s),
-        };
-        Ok(())
+    //         s => println!("Received response status: {:?}", s),
+    //     };
+    //     Ok(())
 }
 
 async fn update_token_forsale_database(tok_id: String, contr_id: String, price: String) -> Result<(), Error> { 
@@ -128,18 +130,19 @@ async fn update_token_forsale_database(tok_id: String, contr_id: String, price: 
    
     // make POST request
     let client = reqwest::Client::new();
-    let url = //YOUR API'S URL HERE !!!
-    let res = client.post(url.to_string())
-        .json(&map)
-        .send()
-        .await?;
+    eprintln!("Please Add a Valid URL and uncomment lines 134-145")
+    // let url = //YOUR API'S URL HERE !!!
+    // let res = client.post(url.to_string())
+    //     .json(&map)
+    //     .send()
+    //     .await?;
                                     
-        match res.status() {
-            StatusCode::OK => println!("Received status of success from response!"),
+    //     match res.status() {
+    //         StatusCode::OK => println!("Received status of success from response!"),
                                   
-            s => println!("Received response status: {:?}", s),
-        };
-        Ok(())
+    //         s => println!("Received response status: {:?}", s),
+    //     };
+    //     Ok(())
 }
 
 async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>, view_client: Addr<ViewClientActor>) {

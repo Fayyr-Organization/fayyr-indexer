@@ -20,6 +20,7 @@ Created by:
 ## Background Information:
 - this indexer currently catches specific methods on a modified version of Matt Lockyer's NFT Marketplace contract which can be found here: https://github.com/BenKurrek/nft-market
 - To change the desired contract that the indexer will look for, simply go to the function `is_fayyr_receipt` and change the accountId accordingly. 
+- In order to make a POST to an API, you will need to uncomment the lines of code in the `remove_token_forsale_database`, `insert_token_forsale_database`, and `update_token_forsale_database` functions and add a valid URL. 
 
 ## Running Indexer:
 - install dependencies and compile code using `cargo check`

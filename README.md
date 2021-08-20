@@ -15,7 +15,7 @@ Created by:
 - [x] struct for passing information to database
 - [x] picking up cross-contract calls
 - [x] connect to CRUD Web API to do posts
-- [x] finish writing up documentation fo rhow to use
+- [x] finish writing up documentation fo how to use
 
 ## Background Information:
 - this indexer currently catches specific methods on a modified version of Matt Lockyer's NFT Marketplace contract which can be found here: https://github.com/BenKurrek/nft-market

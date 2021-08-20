@@ -69,7 +69,7 @@ async fn remove_token_forsale_database(tok_id: String, contr_id: String) -> Resu
    
     // make POST request
     let client = reqwest::Client::new();
-    eprintln!("Please Add a Valid URL and uncomment lines 72-84")
+    eprintln!("Please Add a Valid URL and uncomment lines 72-84");
     // let url = //YOUR API'S URL HERE !!!
     // let res = client.post(url.to_string())
     //     .json(&map)
@@ -81,7 +81,7 @@ async fn remove_token_forsale_database(tok_id: String, contr_id: String) -> Resu
                                   
     //         s => println!("Received response status: {:?}", s),
     //     };
-    //     Ok(())
+        Ok(())
 }
 
 async fn insert_token_forsale_database(tok_id: String, contr_id: String, price: String) -> Result<(), Error> { 
@@ -99,7 +99,7 @@ async fn insert_token_forsale_database(tok_id: String, contr_id: String, price: 
 
     //make POST request
     let client = reqwest::Client::new();
-    eprintln!("Please Add a Valid URL and uncomment lines 103-114")
+    eprintln!("Please Add a Valid URL and uncomment lines 103-114");
     // let url = //YOUR API'S URL HERE !!!
     // let res = client.post(url.to_string())
     //     .json(&map)
@@ -111,7 +111,7 @@ async fn insert_token_forsale_database(tok_id: String, contr_id: String, price: 
                                   
     //         s => println!("Received response status: {:?}", s),
     //     };
-    //     Ok(())
+         Ok(())
 }
 
 async fn update_token_forsale_database(tok_id: String, contr_id: String, price: String) -> Result<(), Error> { 
@@ -130,7 +130,7 @@ async fn update_token_forsale_database(tok_id: String, contr_id: String, price: 
    
     // make POST request
     let client = reqwest::Client::new();
-    eprintln!("Please Add a Valid URL and uncomment lines 134-145")
+    eprintln!("Please Add a Valid URL and uncomment lines 134-145");
     // let url = //YOUR API'S URL HERE !!!
     // let res = client.post(url.to_string())
     //     .json(&map)
@@ -142,7 +142,7 @@ async fn update_token_forsale_database(tok_id: String, contr_id: String, price: 
                                   
     //         s => println!("Received response status: {:?}", s),
     //     };
-    //     Ok(())
+         Ok(())
 }
 
 async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>, view_client: Addr<ViewClientActor>) {
@@ -262,7 +262,7 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
                                 let contract_id_for_api = execution_details.args.get("nft_contract_id").unwrap();
                                 let price_for_api = execution_details.args.get("price").unwrap();
 
-                                let result = remove_token_forsale_database(token_id_for_api.to_string(), contract_id_for_api.to_string(), price_for_api.to_string()).await;
+                                let result = update_token_forsale_database(token_id_for_api.to_string(), contract_id_for_api.to_string(), price_for_api.to_string()).await;
                                 match result {
                                     Err(e) => eprintln!("API call failure. {}",e),
                                     Ok(_)  => eprintln!("API call completed successfully!"),
@@ -361,7 +361,7 @@ async fn listen_blocks(mut stream: mpsc::Receiver<near_indexer::StreamerMessage>
 // Assuming contract deployed to account id market.test.near
 // Checks if receipt receiver is equal to the account id we care about
 fn is_fayyr_receipt(receipt: &near_indexer::near_primitives::views::ReceiptView) -> bool {
-    receipt.receiver_id.as_str() == "market.test.near"
+    receipt.receiver_id.as_ref() == "market.test.near"
 }
 
 fn main() {
